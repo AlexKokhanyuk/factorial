@@ -1,8 +1,8 @@
+import java.util.ArrayList;
 import java.util.InputMismatchException;
+import java.util.List;
 import java.util.Scanner;
-import java.util.concurrent.ConcurrentLinkedDeque;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -16,6 +16,7 @@ public class Main {
     public static void main(String[] args) throws InterruptedException {
 
         ConcurrentLinkedDeque<Integer> deque = new ConcurrentLinkedDeque<>();
+        List<Integer> inputList = new ArrayList<>();
         AtomicInteger counterInput = new AtomicInteger(0);
         AtomicInteger counterOutput = new AtomicInteger(0);
 
@@ -37,12 +38,22 @@ public class Main {
             System.out.println("You must enter a number, the default number of threads is 5.");
         }
         ExecutorService pool = Executors.newFixedThreadPool(numberOfThreads);
-        ReadFile readFile = new ReadFile(fileNameInput, deque, counterInput);
-        PrintResult printResult = new PrintResult(fileNameOutput, deque, counterOutput);
-
-        pool.execute(readFile);
-
-        pool.execute(printResult);
+        if (numberOfThreads < 50) {
+            ReadFile readFile = new ReadFile(fileNameInput, deque, counterInput);
+            PrintResult printResult = new PrintResult(fileNameOutput, deque, counterOutput);
+            pool.execute(readFile);
+            pool.execute(printResult);
+        } else {
+            ReadFile readFile = new ReadFile(fileNameInput, counterInput);
+            Future<List<Integer>> future = pool.submit((Callable<List<Integer>>) readFile);
+            try {
+                inputList = future.get();
+            } catch (ExecutionException e) {
+                e.printStackTrace();
+            }
+            PrintResult printResult = new PrintResult(fileNameOutput, counterOutput, inputList);
+            pool.execute(printResult);
+        }
 
         pool.shutdown();
         while (!pool.isTerminated()) {
