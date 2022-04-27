@@ -1,6 +1,5 @@
-import java.util.ArrayList;
+import java.math.BigInteger;
 import java.util.InputMismatchException;
-import java.util.List;
 import java.util.Scanner;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -13,23 +12,21 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class Main {
 
-    public static void main(String[] args) throws InterruptedException {
-
-        ConcurrentLinkedDeque<Integer> deque = new ConcurrentLinkedDeque<>();
-        List<Integer> inputList = new ArrayList<>();
+    public static void main(String[] args) {
+        ConcurrentMap<Integer, BigInteger> mapOfFactorial = new ConcurrentHashMap<>();
+        ConcurrentMap<Integer, Integer> mapOfInput = new ConcurrentHashMap<>();
         AtomicInteger counterInput = new AtomicInteger(0);
-        AtomicInteger counterOutput = new AtomicInteger(0);
-
+        AtomicInteger counterCalculate = new AtomicInteger(0);
         String fileNameInput = ".\\src\\resources\\input.txt";
         String fileNameOutput = ".\\src\\resources\\output.txt";
         int numberOfThreads = 5;
 
-        System.out.println("Please enter the number of Threads between 1 to 100");
+        System.out.println("Please enter the number of Threads between 1 to 10");
 
         Scanner console = new Scanner(System.in);
         try {
             int inputNumber = console.nextInt();
-            if (inputNumber > 0 & inputNumber < 100) {
+            if (inputNumber > 0 & inputNumber < 10) {
                 numberOfThreads = inputNumber;
             } else {
                 System.out.println("The entered number does not match the range, the default number of threads is 5.");
@@ -38,28 +35,26 @@ public class Main {
             System.out.println("You must enter a number, the default number of threads is 5.");
         }
         ExecutorService pool = Executors.newFixedThreadPool(numberOfThreads);
-        if (numberOfThreads < 50) {
-            ReadFile readFile = new ReadFile(fileNameInput, deque, counterInput);
-            PrintResult printResult = new PrintResult(fileNameOutput, deque, counterOutput);
-            pool.execute(readFile);
-            pool.execute(printResult);
-        } else {
-            ReadFile readFile = new ReadFile(fileNameInput, counterInput);
-            Future<List<Integer>> future = pool.submit((Callable<List<Integer>>) readFile);
-            try {
-                inputList = future.get();
-            } catch (ExecutionException e) {
-                e.printStackTrace();
-            }
-            PrintResult printResult = new PrintResult(fileNameOutput, counterOutput, inputList);
-            pool.execute(printResult);
+        ReadFile readFile = new ReadFile(fileNameInput, mapOfInput, counterInput);
+        CalculateFactorial calculateFactorial = new CalculateFactorial(counterInput, counterCalculate, mapOfInput, mapOfFactorial);
+        PrintResult printResult = new PrintResult(fileNameOutput, mapOfInput, mapOfFactorial, counterInput);
+        Future<ConcurrentMap<Integer, Integer>> future = pool.submit((Callable<ConcurrentMap<Integer, Integer>>) readFile);
+        try {
+            future.get();
+        } catch (InterruptedException | ExecutionException e) {
+            e.printStackTrace();
         }
+
+        for (int i = 0; i < 20; i++) {
+            pool.execute(calculateFactorial);
+        }
+        pool.execute(printResult);
 
         pool.shutdown();
         while (!pool.isTerminated()) {
         }
         System.out.println("Finished all threads");
         System.out.println("Read " + counterInput + " line containing numbers.");
-        System.out.println("Wrote " + counterOutput + " line.");
+
     }
 }
