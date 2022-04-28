@@ -11,6 +11,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 
 public class Main {
+    public static CopyOnWriteArraySet<String> threadsName = new CopyOnWriteArraySet<>();
 
     public static void main(String[] args) {
         ConcurrentMap<Integer, BigInteger> mapOfFactorial = new ConcurrentHashMap<>();
@@ -53,8 +54,12 @@ public class Main {
         pool.shutdown();
         while (!pool.isTerminated()) {
         }
-        System.out.println("Finished all threads");
+        System.out.println("Treads:");
+        threadsName.forEach(System.out::println);
+        System.out.println("- are calculated Factorial.");
         System.out.println("Read " + counterInput + " line containing numbers.");
+        System.out.println("Finished all threads");
+
 
     }
 }

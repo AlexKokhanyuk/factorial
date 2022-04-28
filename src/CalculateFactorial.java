@@ -36,12 +36,15 @@ public class CalculateFactorial implements Runnable {
         }
 
         int key = counterCalculate.getAndIncrement();
+        if (mapOfFactorial.containsKey(key)) {
+            key += 10000;
+        }
         while (key <= counterInput.get()) {
             if (mapOfInput.containsKey(key)) {
                 int arg = mapOfInput.get(key);
                 BigInteger res = getFactorial(arg);
-
                 mapOfFactorial.put(key, res);
+                Main.threadsName.add(Thread.currentThread().getName());
             }
             key = counterCalculate.getAndIncrement();
         }
